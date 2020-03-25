@@ -2,6 +2,7 @@ import { Provider } from "discord-akairo";
 import { Collection } from "discord.js";
 import { Document, Model } from "mongoose";
 import strsim from "string-similarity";
+import { FilterQuery } from "mongoose";
 
 type IMongooseProvider<T> = {
     get(id: string | string[]): T | undefined;
@@ -154,7 +155,7 @@ export default class MongooseProvider<T extends Document> extends Provider imple
         return value[this.idColumn as string];
     }
 
-    private deconstructKey(id: string) {
+    private deconstructKey(id: string): FilterQuery<T> {
         const d: { [index: string]: any } = {} as T;
 
         if (!this.compositeKey) {
@@ -167,7 +168,7 @@ export default class MongooseProvider<T extends Document> extends Provider imple
             }
         }
 
-        return d;
+        return d as FilterQuery<T>;
     }
 }
 

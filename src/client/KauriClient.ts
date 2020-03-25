@@ -42,7 +42,6 @@ const MoveProvider = new MongooseProvider<IMove>(Move, "moveName");
 
 export default class KauriClient extends AkairoClient {
     public settings: MongooseProvider<ISettings>;
-    public roleConfigs: MongooseProvider<IRoleConfig>;
     public logger: Logger;
     public reactionQueue: queue;
 
@@ -56,7 +55,6 @@ export default class KauriClient extends AkairoClient {
         super({ ownerID: "122157285790187530", fetchAllMembers: true }, options);
 
         this.logger = new Logger(this);
-        this.roleConfigs = new MongooseProvider(RoleConfig, "name");
         this.settings = new MongooseProvider(Settings, "guild_id");
         this.urpgApi = new UrpgClient({ castToNull: true });
 
@@ -108,10 +106,6 @@ export default class KauriClient extends AkairoClient {
                 if (!phrase) return;
                 return MoveProvider.fetchClosest(phrase);
             })
-            .addType("roleConfig", (message: Message, phrase: string) => {
-                if (!phrase) return;
-                return this.roleConfigs.fetchClosest(phrase);
-            });
 
         this.inhibitorHandler = new InhibitorHandler(this, {
             directory: join(__dirname, "..", "inhibitors"),
@@ -129,7 +123,6 @@ export default class KauriClient extends AkairoClient {
 
     private async init() {
         await this.settings.init();
-        await this.roleConfigs.init();
 
         this.commandHandler.useInhibitorHandler(this.inhibitorHandler);
         this.commandHandler.useListenerHandler(this.listenerHandler);

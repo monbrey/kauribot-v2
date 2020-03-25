@@ -1,5 +1,5 @@
 import { MessageEmbed } from "discord.js";
-import { CreativeRank, Location, Matched, Pokemon as ApiPokemon, PokemonAbility, PokemonAttack, PokemonMega, PokemonType } from "urpg.js";
+import { CreativeRank, Location, Matched, Pokemon as ApiPokemon, PokemonAbility, PokemonAttack, PokemonMega } from "urpg.js";
 import KauriClient from "../client/KauriClient";
 import { ICON_BASE, SPRITE_BASE } from "../util/constants";
 import { Color } from "./color";
