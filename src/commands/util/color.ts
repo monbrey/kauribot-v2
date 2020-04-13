@@ -1,13 +1,16 @@
-import { Message } from "discord.js";
+import { Collection, Message, MessageEmbed } from "discord.js";
 import { KauriCommand } from "../../lib/commands/KauriCommand";
-import { Move } from "../../models/move";
 import { CustomColor } from "../../models/customColors";
+import { IMoveDocument } from "../../models/move";
+import { stripIndents } from "common-tags";
 
 interface CommandArgs {
-    query: string;
+    moves: IMoveDocument[];
 }
 
 export default class MoveCommand extends KauriCommand {
+    private response?: Message;
+
     constructor() {
         super("BBColor Formatting", {
             aliases: ["color"],
@@ -15,33 +18,46 @@ export default class MoveCommand extends KauriCommand {
             clientPermissions: ["SEND_MESSAGES"],
             description: "Provides BBCode color formatting for moves",
             requiresDatabase: true,
+            separator: ",",
             usage: "color <move>"
         });
     }
 
     public *args() {
-        const query = yield {
-            type: "string",
-            match: "text",
+        const moves = yield {
+            type: "move",
+            match: "separate",
             prompt: {
-                start: "> Please provide the name of a move to lookup"
+                start: "> Please provide the names of moves to lookup"
             }
         };
 
-        return { query };
+        return { moves };
     }
 
-    public async exec(message: Message, { query }: CommandArgs) {
+    public async before(message: Message) {
+        const embed = new MessageEmbed().setTitle("Parsing and looking up data...");
+        this.response = await message.util!.send(embed)
+    }
+
+    public async exec(message: Message, { moves }: CommandArgs) {
+        if (moves.length === 0) return this.response?.edit(new MessageEmbed().setTitle("No moves found").setColor(0xffc107));
         try {
-            const move = await Move.findClosest("moveName", query);
-            if (move) {
-                const color = await CustomColor.getColorForType(message.author.id, move.moveType.toLowerCase());
-                if(color) return message.util!.send(`[color=${color}]${move.moveName}[/color]`);
-                else return message.util!.send("No color mapping found - use !color set <type> #<hex> to add one. (coming soon)");
-            } else {
-                this.client.logger.move(message, query, "none");
-                return message.channel.embed("warn", `No results found for ${query}`);
+            const colors = await CustomColor.find({});
+            if (colors.length === 0) return this.response?.edit(new MessageEmbed().setTitle(`No colours found for ${message.author}`).setColor(0xffc107));
+
+            const [found, missing] = new Collection(moves.map(m => ([m._id, m]))).partition(m => colors.some(c => c.key === m.moveType.toLowerCase()));
+            const response = found.map(m => {
+                const { color } = colors.find(c => c.key === m.moveType.toLowerCase())!;
+                return `[color=${color}]${m.moveName}[/color]`;
+            });
+
+            const embed = new MessageEmbed().setTitle("Parsed results").setDescription(`\`\`\`${response.join("\n")}\`\`\``).setColor(0x267f00);
+            if (missing.size) {
+                const missingTypes = Array.from(new Set(missing.map(m => m.moveType))).join(", ")
+                embed.setFooter(`No colours set for ${missingTypes} - these moves were excluded`);
             }
+            return this.response?.edit(embed)
         } catch (e) {
             this.client.logger.parseError(e);
         }
