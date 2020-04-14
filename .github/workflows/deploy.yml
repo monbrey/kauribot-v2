@@ -33,8 +33,8 @@ jobs:
         USERNAME: ${{ secrets.OVH_USER }}
         PASSPHRASE: ${{ secrets.OVH_PASSPHRASE }}
       with:
-        source: "dist/*,package-lock.json"
-        target: "bots/professor-kauri"
+        source: "dist/*,package.json,package-lock.json"
+        target: "bots/kauribot"
         strip_components: 1
 
     - name: Deploy package files
@@ -46,7 +46,7 @@ jobs:
         PASSPHRASE: ${{ secrets.OVH_PASSPHRASE }}
       with:
         source: "package.json,package-lock.json"
-        target: "bots/professor-kauri"
+        target: "bots/kauribot"
 
     - name: Restart the bot
       uses: appleboy/ssh-action@master
@@ -55,4 +55,4 @@ jobs:
         host: ${{ secrets.OVH_HOST }}
         username: ${{ secrets.OVH_USER }}
         passphrase: ${{ secrets.OVH_PASSPHRASE }}
-        script: pm2 restart ecosystem.config.js --only professor-kauri --env=production
+        script: pm2 restart ecosystem.config.js --only kauribot
